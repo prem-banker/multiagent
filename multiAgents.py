@@ -168,7 +168,83 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Returns whether or not the game state is a losing state
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        
+        _, action = self.minimax(gameState, 0, 0)
+
+        return action
+    
+    
+    def minimax(self, state, agentIndex, depth):
+        """
+        Outputs the score value and action as an array. Score is required 
+        to pass in  the child max and min functions whereas action is 
+        required to pass to the getAction function
+
+        """
+        
+        # Terminating condition
+        if state.isLose() or state.isWin() or depth is self.depth:
+            return state.getScore(), ""
+
+        # As the pacman has the index 0
+        print(agentIndex)
+        if agentIndex == 0:
+            return self._maxval(state, agentIndex, depth)
+        else:
+            return self._minval(state, agentIndex, depth)
+
+    def _maxval(self, state, agentIndex, depth):
+        """
+        Returns the max utility value-action for max-agent
+        """
+        possibleMoves = state.getLegalActions(agentIndex)
+        bestVal = -100000
+        bestAction = ""
+
+        for action in possibleMoves:
+            successor = state.generateSuccessor(agentIndex, action)
+            successor_index = agentIndex + 1
+            successor_depth = depth
+
+            # print(state.getNumAgents())
+            # Update the successor agent's index and depth if it's pacman
+            if successor_index == state.getNumAgents():
+                successor_index = 0
+                successor_depth += 1
+
+            current_value = self.minimax(successor, successor_index, successor_depth)[0]
+
+            if current_value > bestVal:
+                bestVal = current_value
+                bestAction = action
+
+        return bestVal, bestAction
+
+    def _minval(self, state, agentIndex, depth):
+        """
+        Returns the min utility value-action for min-agent
+        """
+        legalMoves = state.getLegalActions(agentIndex)
+        min_value = float("inf")
+        min_action = ""
+
+        for action in legalMoves:
+            successor = state.generateSuccessor(agentIndex, action)
+            successor_index = agentIndex + 1
+            successor_depth = depth
+
+            # Update the successor agent's index and depth if it's pacman
+            if successor_index == state.getNumAgents():
+                successor_index = 0
+                successor_depth += 1
+
+            current_value = self.minimax(successor, successor_index, successor_depth)[0]
+
+            if current_value < min_value:
+                min_value = current_value
+                min_action = action
+
+        return min_value, min_action
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
