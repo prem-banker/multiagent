@@ -183,7 +183,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
         """
         
         # Terminating condition
-        if state.isLose() or state.isWin() or depth is self.depth:
+        if state.isLose() or state.isWin() or depth == self.depth * state.getNumAgents():
             return state.getScore(), ""
 
         # As the pacman has the index 0
@@ -203,7 +203,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
 
             # adding 1 to agentinex for the next agent turn
             # tho modulo by number of agents
-            currVal = self.minimax(successor, (agentIndex + 1)%state.getNumAgents(), depth+1)[0]
+            currVal = self.minimax(successor, (depth + 1)%state.getNumAgents(), depth+1)[0]
 
             if currVal > bestVal:
                 bestVal = currVal
@@ -222,7 +222,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
 
             # adding 1 to agentinex for the next agent turn
             # tho modulo by number of agents
-            currVal = self.minimax(successor, (agentIndex + 1)%state.getNumAgents(), depth+1)[0]
+            currVal = self.minimax(successor, (depth + 1)%state.getNumAgents(), depth+1)[0]
 
             if currVal < bestVal:
                 bestVal = currVal
@@ -241,7 +241,63 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.alphabeta(gameState, 0, 0, -100000, 100000)[1]
+
+    def alphabeta(self, state, agentIndex, depth, alpha, beta):
+        if state.isLose() or state.isWin() or depth == self.depth * state.getNumAgents():
+            return self.evaluationFunction(state), ""
+        
+        # As the pacman has the index 0
+        if agentIndex == 0:
+            return self._maxval(state, agentIndex, depth, alpha, beta)
+        else:
+            return self._minval(state, agentIndex, depth, alpha, beta)
+
+    def _maxval(self, state, agentIndex, depth, alpha, beta):
+        possibleMoves = state.getLegalActions(agentIndex)
+        bestVal = -100000
+        bestAction = ""
+
+        for action in possibleMoves:
+            successor = state.generateSuccessor(agentIndex, action)
+
+            # adding 1 to agentinex for the next agent turn
+            # tho modulo by number of agents
+            currVal = self.alphabeta(successor, (depth + 1)%state.getNumAgents(), depth+1, alpha, beta)[0]
+
+            if currVal > bestVal:
+                bestVal = currVal
+                bestAction = action
+            if bestVal > beta:
+                return bestVal, bestAction
+            else:
+                alpha = max(alpha, bestVal)
+
+        return bestVal, bestAction
+
+    def _minval(self, state, agentIndex, depth, alpha, beta):
+        possibleMoves = state.getLegalActions(agentIndex)
+        bestVal = 100000
+        bestAction = ""
+
+        for action in possibleMoves:
+            successor = state.generateSuccessor(agentIndex, action)
+
+            # adding 1 to agentinex for the next agent turn
+            # tho modulo by number of agents
+            currVal = self.alphabeta(successor, (depth + 1)%state.getNumAgents(), depth+1, alpha, beta)[0]
+
+            if currVal < bestVal:
+                bestVal = currVal
+                bestAction = action
+            if bestVal < alpha:
+                return bestVal, bestAction
+            else: 
+                beta = min(beta, bestVal)
+
+        return bestVal, bestAction
+
+
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
@@ -256,7 +312,54 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        
+        return self.expectimax(gameState, 0, self.depth * gameState.getNumAgents(), "" )[1]
+
+    def expectimax(self, state, agentIndex, depth, action):
+        if state.isLose() or state.isWin() or depth == 0:
+            return self.evaluationFunction(state), ""
+
+        # As the pacman has the index 0
+        if agentIndex == 0:
+            return self._maxval(state, agentIndex, depth, action)
+        else:
+            return self._expval(state, agentIndex, depth, action)
+
+    def _maxval(self, state, agentIndex, depth, action):
+        possibleMoves = state.getLegalActions(agentIndex)
+        bestVal = -100000
+        bestAction = ""
+
+
+        for move in possibleMoves:
+            nextIndex = (agentIndex + 1) % state.getNumAgents()
+            currAction = None
+
+            if self.depth * state.getNumAgents() != depth:
+                currAction = action
+            else:
+                currAction = move
+            currVal = self.expectimax(state.generateSuccessor(agentIndex, move), nextIndex,  depth - 1, currAction)[0]
+
+
+            if currVal > bestVal:
+                bestVal = currVal
+                bestAction = move
+
+        return bestVal, bestAction
+
+    def _expval(self, state, agentIndex, depth, action):
+        possibleMoves = state.getLegalActions(agentIndex)
+        averageScore = 0
+        prob = 1/ len(possibleMoves)
+        for move in possibleMoves:
+            nextIndex = (agentIndex + 1) % state.getNumAgents()
+            val, act = self.expectimax(state.generateSuccessor(agentIndex, move),
+                                         nextIndex, depth - 1, action)
+            averageScore += val * prob
+        return averageScore, action
+
+
 
 def betterEvaluationFunction(currentGameState):
     """
@@ -266,7 +369,27 @@ def betterEvaluationFunction(currentGameState):
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    pacmanPos = currentGameState.getPacmanPosition()
+
+    foods = currentGameState.getFood().asList()
+
+    foodScore = 1
+
+    gameScore = currentGameState.getScore()
+
+  
+    foodDis = [manhattanDistance(pacmanPos, fpos) for fpos in foods]
+
+    foodCount = len(foods)
+    capsuleCount = len(currentGameState.getCapsules())
+    if foodCount > 0:
+        foodScore = min(foodDis)
+
+
+    return 20/foodScore + 300*gameScore - 150*foodCount -20*capsuleCount
+
+
 
 # Abbreviation
 better = betterEvaluationFunction
