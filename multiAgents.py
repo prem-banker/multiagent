@@ -40,6 +40,7 @@ class ReflexAgent(Agent):
         """
         # Collect legal moves and successor states
         legalMoves = gameState.getLegalActions()
+        legalMoves.remove("Stop")
 
         # Choose one of the best actions
         scores = [self.evaluationFunction(gameState, action) for action in legalMoves]
@@ -48,10 +49,6 @@ class ReflexAgent(Agent):
         chosenIndex = random.choice(bestIndices) # Pick randomly among the best
 
         "Add more of your code here if you want to"
-
-        print("chosenIndex")
-        print(chosenIndex)
-        print(legalMoves)
 
         return legalMoves[chosenIndex]
 
@@ -78,24 +75,37 @@ class ReflexAgent(Agent):
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
         "*** YOUR CODE HERE ***"
-        distance = 5
 
-        # print("======\n")
-        # print(self)
-        # print(manhattanDistance((18,1), (1,9) ))
-        # # print(newPos.width)
-        # print(newFood.height)
-        # print(newFood.width)
-        # print(newGhostStates)
-        # print(newScaredTimes)
-        # print("======\n")
+        foodList = successorGameState.getFood().asList()
+        foodScore = 1000000
+        for food in foodList:
+            foodScore = min(foodScore, manhattanDistance(newPos, food))
 
-        # return successorGameState.getScore()
-        return  self.getAverageFood(successorGameState, 5 )
 
-    """
-    Custom methods
-    """
+
+        # if ghost is present too close,
+        # check if they are scared right now and have more scared time left.
+        # if yes than go for it, else do not
+        for ghost in successorGameState.getGhostStates():
+            if (manhattanDistance(newPos, ghost.getPosition() ) < 5):
+                if ghost.scaredTimer  > 2 * manhattanDistance(newPos, ghost.getPosition()):
+                    return 1000000
+                else:
+                    return -1000000
+
+
+        # as capsule gives more points, taking capsiule
+        # distance as well. If it is too near, go for it
+        for capsule in successorGameState.getCapsules():
+            if (manhattanDistance(newPos, capsule ) < 1):
+                return 10000
+
+
+
+        # reciprocal of food score as suggested in question
+        return successorGameState.getScore() + 1 / foodScore
+
+
     def getAverageFood(self, successorGameState, distance):
 
         foodGrid = successorGameState.getFood()
@@ -106,6 +116,32 @@ class ReflexAgent(Agent):
 
 
         count = 0
+
+
+        for x in range(xRange[0], xRange[1]):
+            for y in range(yRange[0], yRange[1]):
+                if foodGrid[x][y]:
+                    count+=1
+
+        print(count)
+        return count
+
+    def getNotScaredGhosts(self, successorGameState, distance):
+
+        newGhostStates = successorGameState.getGhostStates()
+        newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+
+        foodGrid = successorGameState.getFood()
+        height, width = (foodGrid.height, foodGrid.width)
+        newPos = successorGameState.getPacmanPosition()
+        xRange = (max(0, newPos[0] - distance//2 ), min(width,newPos[0] + distance//2))
+        yRange =  (max(0, newPos[1] - distance//2 ), min(height,newPos[1] + distance//2))
+
+        count = 0
+
+
+        for ghost in newGhostStates:
+            print(ghost.getGhostPosition())
 
 
         for x in range(xRange[0], xRange[1]):
