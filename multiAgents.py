@@ -79,7 +79,9 @@ class ReflexAgent(Agent):
         foodList = successorGameState.getFood().asList()
         foodScore = 1000000
         for food in foodList:
-            foodScore = min(foodScore, manhattanDistance(newPos, food))
+            if foodScore > manhattanDistance(newPos, food):
+                foodScore=  manhattanDistance(newPos, food)
+
 
 
 
@@ -98,61 +100,12 @@ class ReflexAgent(Agent):
         # distance as well. If it is too near, go for it
         for capsule in successorGameState.getCapsules():
             if (manhattanDistance(newPos, capsule ) < 1):
-                return 10000
+                return 1000000
 
 
 
         # reciprocal of food score as suggested in question
         return successorGameState.getScore() + 1 / foodScore
-
-
-    def getAverageFood(self, successorGameState, distance):
-
-        foodGrid = successorGameState.getFood()
-        height, width = (foodGrid.height, foodGrid.width)
-        newPos = successorGameState.getPacmanPosition()
-        xRange = (max(0, newPos[0] - distance//2 ), min(width,newPos[0] + distance//2))
-        yRange =  (max(0, newPos[1] - distance//2 ), min(height,newPos[1] + distance//2))
-
-
-        count = 0
-
-
-        for x in range(xRange[0], xRange[1]):
-            for y in range(yRange[0], yRange[1]):
-                if foodGrid[x][y]:
-                    count+=1
-
-        print(count)
-        return count
-
-    def getNotScaredGhosts(self, successorGameState, distance):
-
-        newGhostStates = successorGameState.getGhostStates()
-        newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
-
-        foodGrid = successorGameState.getFood()
-        height, width = (foodGrid.height, foodGrid.width)
-        newPos = successorGameState.getPacmanPosition()
-        xRange = (max(0, newPos[0] - distance//2 ), min(width,newPos[0] + distance//2))
-        yRange =  (max(0, newPos[1] - distance//2 ), min(height,newPos[1] + distance//2))
-
-        count = 0
-
-
-        for ghost in newGhostStates:
-            print(ghost.getGhostPosition())
-
-
-        for x in range(xRange[0], xRange[1]):
-            for y in range(yRange[0], yRange[1]):
-                if foodGrid[x][y]:
-                    count+=1
-
-        print(count)
-        return count
-
-
 
 
 
